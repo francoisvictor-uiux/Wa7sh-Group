@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -187,9 +188,9 @@ export function LoginDesktop() {
                   تذكرني
                 </span>
               </label>
-              <a href="/forgot-password" className="text-brand-primary hover:text-brand-primary-hover transition-colors">
+              <Link href="/forgot-password" className="text-brand-primary hover:text-brand-primary-hover transition-colors">
                 نسيت كلمة المرور؟
-              </a>
+              </Link>
             </div>
 
             <Button
@@ -225,12 +226,12 @@ export function LoginDesktop() {
           </div>
 
           <div className="flex items-center justify-center">
-            <a
+            <Link
               href="/login/pin"
               className="text-sm text-brand-primary hover:text-brand-primary-hover transition-colors font-medium"
             >
               أو دخول بالـ PIN
-            </a>
+            </Link>
           </div>
 
         </div>

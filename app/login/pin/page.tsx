@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AvatarTile } from "@/components/auth/AvatarTile";
@@ -151,13 +152,13 @@ export default function PinLoginPage() {
 
         {/* Footer links */}
         <div className="flex items-center gap-6 text-sm text-text-tertiary reveal reveal-3">
-          <a href="/login" className="hover:text-brand-primary transition-colors duration-fast">
+          <Link href="/login" className="hover:text-brand-primary transition-colors duration-fast">
             تسجيل دخول بالبريد الإلكتروني
-          </a>
+          </Link>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <a href="/pin-reset" className="hover:text-brand-primary transition-colors duration-fast">
+          <Link href="/pin-reset" className="hover:text-brand-primary transition-colors duration-fast">
             نسيت PIN؟
-          </a>
+          </Link>
         </div>
 
       </div>

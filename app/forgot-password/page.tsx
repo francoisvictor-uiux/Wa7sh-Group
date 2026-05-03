@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   Mail,
@@ -176,13 +177,13 @@ export default function ForgotPasswordPage() {
         </div>
 
         {step !== "done" && (
-          <a
+          <Link
             href="/login"
             className="inline-flex items-center gap-1.5 text-sm text-text-tertiary hover:text-brand-primary transition-colors duration-fast"
           >
             <ArrowLeft className="w-3.5 h-3.5 rotate-180" strokeWidth={2} />
             العودة لتسجيل الدخول
-          </a>
+          </Link>
         )}
       </header>
 

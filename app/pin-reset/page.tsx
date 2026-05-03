@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, KeyRound, Shield, CheckCircle2 } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { PinDots } from "@/components/auth/PinDots";
@@ -39,6 +40,7 @@ const stageMeta: Record<
 const STORED_PIN = "1234";
 
 export default function PinResetPage() {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>("current");
   const [pin, setPin] = useState("");
   const [newPin, setNewPin] = useState("");
@@ -232,7 +234,7 @@ export default function PinResetPage() {
           ) : (
             <Button
               size="lg"
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => router.push("/login")}
             >
               العودة لتسجيل الدخول
               <ArrowLeft className="w-4 h-4" strokeWidth={2} />
