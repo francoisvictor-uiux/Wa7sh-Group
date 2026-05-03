@@ -50,9 +50,10 @@ export function useLiveOrderEvents() {
 
   useEffect(() => {
     if (!user) return;
+    try {
 
     const next = new Map<string, Snap>();
-    requests.forEach((r) => next.set(r.id, snapshot(r)));
+    requests.forEach((r) => { if (r?.id) next.set(r.id, snapshot(r)); });
 
     if (!initializedRef.current) {
       prevRef.current = next;
@@ -110,5 +111,11 @@ export function useLiveOrderEvents() {
     });
 
     prevRef.current = next;
+    } catch (err) {
+      // Stale localStorage entries with missing fields shouldn't crash
+      // the whole shell — swallow and resync on the next change.
+      console.warn("useLiveOrderEvents diff failed", err);
+      prevRef.current = null;
+    }
   }, [requests, user, toast]);
 }

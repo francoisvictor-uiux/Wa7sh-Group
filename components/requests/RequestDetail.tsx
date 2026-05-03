@@ -30,29 +30,31 @@ import { cn } from "@/lib/utils";
 
 /** Adapt a FactoryRequest (DB document) to the RequestRecord shape used by
  * the existing detail UI. Lets DB-created requests render through the same
- * component without a parallel implementation. */
+ * component without a parallel implementation. Defensive against stale or
+ * partial localStorage data — every field has a fallback. */
 function adaptFactoryRequest(r: FactoryRequest): RequestRecord {
+  const items = Array.isArray(r.items) ? r.items : [];
   return {
-    id: r.id,
-    number: r.requestNumber,
-    status: r.status,
-    fromBranchId: r.branchId,
-    fromBranchName: r.branchName,
+    id: r.id ?? "",
+    number: r.requestNumber ?? "—",
+    status: r.status ?? "requested",
+    fromBranchId: r.branchId ?? "",
+    fromBranchName: r.branchName ?? "—",
     toFactory: "المصنع الرئيسي",
     createdBy: "—",
-    createdAt: r.createdAt,
+    createdAt: r.createdAt ?? "—",
     approvedBy: r.approvedBy,
     approvedAt: r.approvedAt,
     scheduledDelivery: r.requestedDeliveryDate,
-    items: r.items.map((it) => ({
-      catalogId: it.catalogId,
-      name: it.name,
-      quantity: it.requestedQty,
-      unit: it.unit as any,
+    items: items.map((it) => ({
+      catalogId: it.catalogId ?? "",
+      name: it.name ?? "—",
+      quantity: it.requestedQty ?? 0,
+      unit: (it.unit as any) ?? "حبة",
       pricePerUnit: 0,
     })),
     totalValue: 0,
-    itemCount: r.items.length,
+    itemCount: items.length,
     priority: r.priority === "urgent" ? "rush" : "normal",
     note: r.note,
   };
@@ -65,9 +67,26 @@ export function RequestDetail({ requestId }: { requestId: string }) {
   const { requests: dbRequests } = useRequestsDB();
   // Look up in the static mock first, then in the live DB. DB-created
   // requests are adapted into the RequestRecord shape on the fly.
-  const dbHit = dbRequests.find((r) => r.id === requestId);
+  const dbHit = (dbRequests ?? []).find((r) => r?.id === requestId);
   const staticHit = requests.find((r) => r.id === requestId);
   const request = staticHit ?? (dbHit ? adaptFactoryRequest(dbHit) : requests[0]);
+
+  // Guard against a missing request — happens if requestId doesn't match
+  // anything (bad/expired link, cleared DB, etc.) and the mock list is
+  // somehow empty too. Render a friendly fallback instead of crashing.
+  if (!request) {
+    return (
+      <div className="px-8 py-12 max-w-md mx-auto text-center space-y-4">
+        <p className="text-base font-bold tracking-tight">لم يتم العثور على الطلب</p>
+        <p className="text-sm text-text-tertiary">
+          الطلب غير موجود — ربما تم حذفه أو الرابط منتهي الصلاحية.
+        </p>
+        <Link href="/requests" className="inline-flex items-center justify-center h-10 px-5 rounded-sm bg-brand-primary text-text-on-brand text-sm font-medium">
+          العودة لكل الطلبات
+        </Link>
+      </div>
+    );
+  }
   const [approved, setApproved] = useState(false);
   const [rejected, setRejected] = useState(false);
 
