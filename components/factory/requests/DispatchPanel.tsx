@@ -1,11 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { X, Truck, QrCode, Check, Minus, Plus, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, Truck, QrCode, Check, Minus, Plus, AlertTriangle, Clock } from "lucide-react";
 import { type FactoryRequest, type DispatchItem } from "@/lib/mock/factoryRequests";
 import { useRequestsDB } from "@/lib/db/requests";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+
+/** QR validity window — branch must scan within this time after dispatch. */
+const QR_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/** Build the structured payload encoded into the QR. */
+export function buildQRPayload(req: FactoryRequest): string {
+  const payload = {
+    order_id: req.requestNumber,
+    token: req.dispatchToken ?? "",
+    issued_at: req.dispatchedAtISO ?? new Date().toISOString(),
+    expires_in: QR_TTL_MS / 1000,
+  };
+  return JSON.stringify(payload);
+}
 
 interface DispatchPanelProps {
   request: FactoryRequest;
@@ -44,7 +58,10 @@ function MockQR({ value }: { value: string }) {
 }
 
 export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
-  const { dispatchOrder } = useRequestsDB();
+  const { dispatchOrder, requests } = useRequestsDB();
+  // Read the live version of this request — needed in the QR phase to pick
+  // up the dispatchToken + dispatchedAtISO that were just generated.
+  const liveRequest = requests.find((r) => r.id === request.id) ?? request;
 
   // Init dispatch items from approved/requested quantities
   const [dispatchItems, setDispatchItems] = useState<DispatchItem[]>(
@@ -212,15 +229,19 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
               </p>
             </div>
 
-            <div className="py-2">
-              <p className="text-[11px] tracking-[0.14em] uppercase text-text-tertiary mb-3">
+            <div className="py-2 space-y-3">
+              <p className="text-[11px] tracking-[0.14em] uppercase text-text-tertiary">
                 <QrCode className="w-3.5 h-3.5 inline-block mr-1" strokeWidth={1.75} />
                 أعطِ هذا الكود للسائق
               </p>
-              <MockQR value={request.requestNumber} />
-              <p className="text-xs text-text-tertiary mt-2">
-                الفرع سيستخدمه لاستلام الطلب
-              </p>
+              <MockQR value={buildQRPayload(liveRequest)} />
+              <div className="flex items-center justify-center gap-2 text-[11px] text-text-tertiary tabular">
+                <span>الكود:</span>
+                <code className="px-2 py-0.5 rounded bg-bg-surface-raised text-text-secondary font-mono tracking-wider">
+                  {liveRequest.dispatchToken ?? "—"}
+                </code>
+              </div>
+              <ExpiryCountdown issuedAtISO={liveRequest.dispatchedAtISO} />
             </div>
 
             {request.driverName && (
@@ -238,5 +259,40 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
         )}
       </aside>
     </>
+  );
+}
+
+/* ── Live countdown showing time until QR expires ────────────────────────── */
+function ExpiryCountdown({ issuedAtISO }: { issuedAtISO?: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const issued = issuedAtISO ? new Date(issuedAtISO).getTime() : now;
+  const remaining = Math.max(0, issued + QR_TTL_MS - now);
+  const expired = remaining === 0;
+  const hours    = Math.floor(remaining / 3_600_000);
+  const minutes  = Math.floor((remaining % 3_600_000) / 60_000);
+  const seconds  = Math.floor((remaining % 60_000) / 1000);
+
+  if (expired) {
+    return (
+      <p className="inline-flex items-center gap-1.5 text-[11px] text-status-danger font-medium">
+        <Clock className="w-3 h-3" strokeWidth={2} />
+        انتهت صلاحية الكود — أنشئ كود جديد
+      </p>
+    );
+  }
+  return (
+    <p className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary tabular">
+      <Clock className="w-3 h-3" strokeWidth={2} />
+      صالح لمدة:
+      <span className="text-text-primary font-medium">
+        {hours > 0 && `${hours}س `}
+        {String(minutes).padStart(2, "0")}د {String(seconds).padStart(2, "0")}ث
+      </span>
+    </p>
   );
 }

@@ -48,6 +48,8 @@ export interface FactoryRequest {
   dispatchItems?: DispatchItem[];
   dispatchNote?: string;
   dispatchedAt?: string;
+  dispatchedAtISO?: string;   // for QR expiry calculations
+  dispatchToken?: string;     // 8-char security token embedded in the QR
   driverName?: string;
   /* ── Receive (branch fills on arrival) ── */
   branchConfirmedAt?: string;

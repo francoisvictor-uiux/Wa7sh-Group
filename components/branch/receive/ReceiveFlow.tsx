@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   QrCode, Search, ArrowLeft, ChevronLeft, Truck, AlertTriangle,
-  CheckCircle2, Package, X, MessageSquare, ArrowRight,
+  CheckCircle2, Package, X, MessageSquare, ArrowRight, Lock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequestsDB } from "@/lib/db/requests";
@@ -123,6 +123,7 @@ export function ReceiveFlow() {
   const [scanInput, setScanInput] = useState("");
   const [showManual, setShowManual] = useState(false);
   const [scanError, setScanError] = useState<string>("");
+  const [verifiedItems, setVerifiedItems] = useState(false);
   const [order, setOrder] = useState<FactoryRequest | null>(null);
   const [receiveNote, setReceiveNote] = useState("");
   const [showDispute, setShowDispute] = useState(false);
@@ -143,24 +144,75 @@ export function ReceiveFlow() {
     setScanInput("");
   }
 
+  /**
+   * Manual entry — try to find a matching in-transit order for this branch
+   * by request number. No token validation since the user typed it; we
+   * trust them to be standing in front of the driver.
+   */
   function handleScanSearch(value?: string) {
     const q = (value ?? scanInput).trim().toLowerCase();
     if (!q) return;
     const found = requests.find(
       (r) => (r.requestNumber.toLowerCase().includes(q) || r.id.toLowerCase() === q)
         && r.branchId === branchId
-        && r.status === "in-transit"
     );
-    if (found) {
-      loadOrder(found);
-      setScanError("");
-    } else {
-      setScanError(`لم يتم العثور على طلب في الطريق برقم: ${value ?? scanInput}`);
+    if (!found) {
+      setScanError(`لم يتم العثور على طلب برقم: ${value ?? scanInput}`);
+      return;
     }
+    if (found.status !== "in-transit") {
+      setScanError(`الطلب ${found.requestNumber} ليس في الطريق حالياً (${found.status})`);
+      return;
+    }
+    loadOrder(found);
+    setScanError("");
   }
 
+  /**
+   * QR scan — the QR contains a structured JSON payload. Validate it
+   * fully before loading the order:
+   *   1. Parseable JSON
+   *   2. Order exists for this branch
+   *   3. Status is "in-transit"
+   *   4. Token matches the one stored at dispatch
+   *   5. Not expired (issued_at + expires_in still in the future)
+   */
   function handleQRScan(value: string) {
-    handleScanSearch(value);
+    let payload: { order_id?: string; token?: string; issued_at?: string; expires_in?: number };
+    try {
+      payload = JSON.parse(value);
+    } catch {
+      // Fall back: maybe the QR is just a plain request number (legacy)
+      handleScanSearch(value);
+      return;
+    }
+
+    const found = requests.find(
+      (r) => r.requestNumber === payload.order_id && r.branchId === branchId
+    );
+
+    if (!found) {
+      setScanError("هذا الكود لا يطابق أي طلب لفرعك");
+      return;
+    }
+    if (found.status !== "in-transit") {
+      setScanError(`الطلب ${found.requestNumber} ليس في الطريق — ربما تم استلامه مسبقاً`);
+      return;
+    }
+    if (!payload.token || payload.token !== found.dispatchToken) {
+      setScanError("الكود غير صحيح — الرمز الأمني لا يطابق الطلب");
+      return;
+    }
+    if (payload.issued_at && payload.expires_in) {
+      const issuedAt = new Date(payload.issued_at).getTime();
+      const expiresAt = issuedAt + payload.expires_in * 1000;
+      if (Date.now() > expiresAt) {
+        setScanError("انتهت صلاحية الكود — اطلب من المصنع إصدار كود جديد");
+        return;
+      }
+    }
+    loadOrder(found);
+    setScanError("");
   }
 
   function handleBranchConfirm() {
@@ -423,14 +475,53 @@ export function ReceiveFlow() {
               />
             </div>
 
+            {/* Verification gate — must check this to unlock slide-to-confirm.
+                Forces a deliberate review step before the destructive action. */}
+            <label className={cn(
+              "flex items-start gap-3 p-3.5 rounded-md border cursor-pointer transition-all",
+              verifiedItems
+                ? "border-status-success/50 bg-status-success/5"
+                : "border-border-subtle bg-bg-surface hover:border-border-strong"
+            )}>
+              <input
+                type="checkbox"
+                checked={verifiedItems}
+                onChange={(e) => setVerifiedItems(e.target.checked)}
+                className="sr-only peer"
+              />
+              <span className={cn(
+                "shrink-0 w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all mt-0.5",
+                verifiedItems
+                  ? "bg-status-success border-status-success text-white"
+                  : "border-border-strong bg-bg-canvas"
+              )}>
+                {verifiedItems && <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={3} />}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium tracking-tight">
+                  راجعت كل الكميات مع السائق
+                </p>
+                <p className="text-[11px] text-text-tertiary mt-0.5 leading-relaxed">
+                  بمجرد التأكيد، تُضاف الكميات لمخزون الفرع ولا يمكن التراجع
+                </p>
+              </div>
+            </label>
+
             {/* Actions */}
             <div className="space-y-3 pb-4">
-              <SlideToConfirm
-                label="اسحب لتأكيد الاستلام"
-                sublabel="بعد المراجعة مع السائق"
-                color="success"
-                onConfirm={handleBranchConfirm}
-              />
+              {verifiedItems ? (
+                <SlideToConfirm
+                  label="اسحب لتأكيد الاستلام"
+                  sublabel="ستُحدَّث حالة الطلب وحالة المخزون فوراً"
+                  color="success"
+                  onConfirm={handleBranchConfirm}
+                />
+              ) : (
+                <div className="h-14 rounded-full bg-bg-surface-raised/60 border border-dashed border-border-subtle flex items-center justify-center gap-2 text-xs text-text-tertiary">
+                  <Lock className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  أكّد المراجعة أعلاه لتفعيل التأكيد
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setShowDispute(true)}

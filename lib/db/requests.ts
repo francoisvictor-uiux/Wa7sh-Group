@@ -177,19 +177,27 @@ export function useRequestsDB() {
   }, []);
 
   /* ── Reset DB (back to mock seed) ── */
-  /* ── Dispatch order (factory → in-transit) ── */
+  /* ── Dispatch order (factory → in-transit) — generates a security token
+   * embedded in the QR and an ISO timestamp the branch uses to validate
+   * the QR hasn't expired. Token is short, alphanumeric, uppercase. */
   const dispatchOrder = useCallback((
     id: string,
     dispatchItems: DispatchItem[],
     dispatchNote?: string,
     driverName?: string
   ) => {
-    const now = arabicDateTime();
+    const nowDate = new Date();
+    const humanNow = arabicDateTime(nowDate);
+    const token = Array.from({ length: 8 }, () =>
+      "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]
+    ).join("");
     setRequests((prev) => {
       const next = prev.map((r) => r.id === id ? {
         ...r, status: "in-transit" as const,
         dispatchItems, dispatchNote, driverName,
-        dispatchedAt: now,
+        dispatchedAt: humanNow,
+        dispatchedAtISO: nowDate.toISOString(),
+        dispatchToken: token,
       } : r);
       saveDB(next);
       return next;
