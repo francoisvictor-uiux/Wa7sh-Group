@@ -18,5 +18,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dataset.mode = mode;
   }, [theme, mode]);
 
+  // Apply saved font scale on app load so the user's preference persists
+  // across refreshes for every route, not just the Settings page.
+  useEffect(() => {
+    try {
+      const saved = parseFloat(localStorage.getItem("wahsh.fontScale") || "1");
+      if (!isNaN(saved) && saved >= 0.8 && saved <= 1.4) {
+        (document.documentElement.style as any).zoom = String(saved);
+        document.documentElement.style.fontSize = `${saved * 16}px`;
+      }
+    } catch {}
+  }, []);
+
   return <>{children}</>;
 }

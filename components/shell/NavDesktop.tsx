@@ -199,12 +199,12 @@ function CollapseToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         "active:scale-90"
       )}
     >
-      {/* In RTL the visual leading edge is the right side; the chevron points
-          INTO the content area when expanded (= will collapse), and INTO the
-          sidebar when collapsed (= will expand). */}
+      {/* Sidebar sits on the right in RTL. Arrow points toward where the
+          sidebar will go after the click: → when expanded (will collapse to
+          the right), ← when collapsed (will expand to the left). */}
       {collapsed
-        ? <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-        : <ChevronLeft  className="w-3.5 h-3.5" strokeWidth={2.5} />}
+        ? <ChevronLeft  className="w-3.5 h-3.5" strokeWidth={2.5} />
+        : <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />}
     </button>
   );
 }

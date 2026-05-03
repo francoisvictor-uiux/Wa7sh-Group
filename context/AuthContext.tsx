@@ -46,6 +46,7 @@ interface AuthContextValue {
   login: (userId: string, pin: string) => boolean;
   loginByEmail: (email: string, password: string) => boolean;
   logout: () => void;
+  updateCredentials: (next: { password?: string; pin?: string }) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -114,29 +115,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** Read user-specific credential overrides written by Settings */
+  function applyOverrides(u: AuthUser): AuthUser {
+    try {
+      const raw = localStorage.getItem("wahsh.credentials");
+      if (!raw) return u;
+      const overrides = JSON.parse(raw) as Record<string, { password?: string; pin?: string }>;
+      const override = overrides[u.id];
+      if (!override) return u;
+      return { ...u, ...override };
+    } catch { return u; }
+  }
+
   /** PIN-based login (tablet / mobile) */
   const login = useCallback((userId: string, pin: string): boolean => {
-    const found = MOCK_USERS.find((u) => u.id === userId && u.pin === pin);
-    if (found) { persist(found); return true; }
-    return false;
+    const candidate = MOCK_USERS.find((u) => u.id === userId);
+    if (!candidate) return false;
+    const effective = applyOverrides(candidate);
+    if (effective.pin !== pin) return false;
+    persist(effective);
+    return true;
   }, []);
 
   /** Email+password login (desktop) */
   const loginByEmail = useCallback((email: string, password: string): boolean => {
-    const found = MOCK_USERS.find(
-      (u) =>
-        u.email.toLowerCase() === email.toLowerCase() &&
-        u.password === password
-    );
-    if (found) { persist(found); return true; }
-    return false;
+    const candidate = MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!candidate) return false;
+    const effective = applyOverrides(candidate);
+    if (effective.password !== password) return false;
+    persist(effective);
+    return true;
   }, []);
 
   const logout = useCallback(() => persist(null), []);
 
+  const updateCredentials = useCallback((next: { password?: string; pin?: string }) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated: AuthUser = {
+        ...prev,
+        ...(next.password !== undefined ? { password: next.password } : {}),
+        ...(next.pin !== undefined ? { pin: next.pin } : {}),
+      };
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+        // Also persist a per-user credential override so login works after refresh
+        const overrides = JSON.parse(localStorage.getItem("wahsh.credentials") || "{}");
+        overrides[updated.id] = {
+          password: updated.password,
+          pin: updated.pin,
+        };
+        localStorage.setItem("wahsh.credentials", JSON.stringify(overrides));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, loginByEmail, logout }}
+      value={{ user, isAuthenticated: !!user, isLoading, login, loginByEmail, logout, updateCredentials }}
     >
       {children}
     </AuthContext.Provider>
