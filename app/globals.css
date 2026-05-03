@@ -1,0 +1,610 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   THMANYAH SANS — primary typeface for Arabic + Latin
+   Weights: 300 / 400 / 500 / 700 / 900  (no Semibold)
+   ============================================================ */
+
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyahsans-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyahsans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyahsans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyahsans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyahsans-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   PRIMITIVE TOKENS — never used directly in components
+   Source of truth: Figma "Wahsh Colors" collection
+   ============================================================ */
+
+:root {
+  /* ── Wahsh Ink scale ──────────────────────────────────────────────────── */
+  --wahsh-ink-950: #0f0e0d;   /* ✦ bg-canvas dark · text-on-brand         */
+  --wahsh-ink-900: #191817;   /* ✦ Brand Black · grey-500                 */
+  --wahsh-ink-800: #161413;   /* bg-surface dark (Figma)                  */
+  --wahsh-ink-700: #1f1c1a;   /* bg-surface-raised dark (Figma)           */
+  --wahsh-ink-600: #2a2622;   /* bg-surface-overlay / border dark (Figma) */
+  --wahsh-ink-500: #3a342e;   /* border-strong dark (Figma)               */
+
+  /* ── Wahsh Gold scale ─────────────────────────────────────────────────── */
+  --wahsh-gold-300: #e3c684;
+  --wahsh-gold-400: #d4b76c;  /* hover dark                               */
+  --wahsh-gold-500: #c8a75a;  /* ✦ Brand Gold — dark mode primary         */
+  --wahsh-gold-600: #b89549;  /* active dark                              */
+  --wahsh-gold-700: #8e7333;  /* ✦ Brand Gold — light mode primary (AA✓)  */
+  --wahsh-gold-800: #75601f;  /* hover light                              */
+  --wahsh-gold-900: #5e4d18;  /* active light                             */
+
+  /* ── Neutral Grey scale (from Figma grey palette — no brown tint) ─────── */
+  --grey-50:  #e8e8e8;
+  --grey-100: #b8b7b7;
+  --grey-200: #959594;
+  --grey-300: #656464;
+  --grey-400: #474645;
+  --grey-500: #191817;        /* = wahsh-ink-900 / Brand Black            */
+  --grey-600: #171615;
+  --grey-700: #121110;
+  --grey-800: #0e0d0d;
+  --grey-900: #0b0a0a;
+
+  /* ── Wahsh Cream scale (warm light — for dark mode text / light bg) ────── */
+  --wahsh-cream-50:  #faf5ec;
+  --wahsh-cream-100: #f5ede0;  /* ✦ text-primary dark (Figma)             */
+  --wahsh-cream-200: #ebe0cc;  /* bg-muted light / border light           */
+  --wahsh-cream-300: #ddcfb3;  /* border-default light (Figma)            */
+  --wahsh-cream-400: #c4b393;  /* border-strong light (Figma)             */
+
+  /* ── Forno palette ────────────────────────────────────────────────────── */
+  --forno-shade-900: #141812;
+  --forno-shade-800: #1c2117;
+  --forno-shade-700: #252a1f;
+  --forno-cream-100: #f8f5ec;
+  --forno-cream-50:  #fcfaf2;
+  --forno-green-400: #3a8856;
+  --forno-green-500: #2a6b41;
+  --forno-green-600: #1f5232;
+  --forno-red-500:   #e64001;
+  --forno-red-600:   #c43400;
+  --forno-amber-500: #fd9d04;
+
+  /* ── Semantic — universal across all themes (Figma) ──────────────────── */
+  /* Stored as space-separated RGB channels so Tailwind's
+     `bg-status-X/<alpha>` opacity modifiers resolve correctly via
+     `rgb(var(--c-X) / <alpha-value>)`. For direct CSS usage, wrap in
+     rgb(): `color: rgb(var(--c-success));` */
+  --c-success:    27 135 63;
+  --c-success-bg: rgba(27,  135,  63, 0.12);
+  --c-warning:    196 126 0;
+  --c-warning-bg: rgba(196, 126,   0, 0.14);
+  --c-danger:     213 43 30;
+  --c-danger-bg:  rgba(213,  43,  30, 0.12);
+  --c-info:       30 111 204;
+  --c-info-bg:    rgba(30,  111, 204, 0.12);
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --d-instant:        120ms;
+  --d-fast:           200ms;
+  --d-normal:         320ms;
+  --d-slow:           480ms;
+  --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+/* ============================================================
+   SURFACE 1 — Wahsh · Dark  (default)
+   Source: Figma "Wahsh Colors" → Dark mode
+   Canvas #0F0E0D · Gold #C8A75A · Cream text #F5EDE0
+   ============================================================ */
+
+[data-theme="wahsh"][data-mode="dark"],
+:root {
+  /* Backgrounds — Figma exact */
+  --bg-canvas:          var(--wahsh-ink-950);   /* #0f0e0d */
+  --bg-surface:         var(--wahsh-ink-800);   /* #161413 */
+  --bg-surface-raised:  var(--wahsh-ink-700);   /* #1f1c1a */
+  --bg-surface-overlay: var(--wahsh-ink-600);   /* #2a2622 */
+  --bg-muted:           var(--wahsh-ink-700);   /* #1f1c1a */
+
+  /* Text — Figma exact */
+  --text-primary:   var(--wahsh-cream-100);     /* #f5ede0 */
+  --text-secondary: #b8ac98;
+  --text-tertiary:  #847a6b;
+  --text-inverse:   var(--wahsh-cream-100);     /* #f5ede0 */
+  --text-on-brand:  var(--wahsh-ink-950);       /* #0f0e0d — on gold */
+
+  /* Borders — Figma exact */
+  --border-default: var(--wahsh-ink-600);       /* #2a2622 */
+  --border-subtle:  var(--wahsh-ink-700);       /* #1f1c1a */
+  --border-strong:  var(--wahsh-ink-500);       /* #3a342e */
+  --border-focus:   var(--wahsh-gold-500);      /* #c8a75a */
+
+  /* Brand — Figma exact */
+  --brand-primary:        var(--wahsh-gold-500);  /* #c8a75a */
+  --brand-primary-hover:  var(--wahsh-gold-400);  /* #d4b76c */
+  --brand-primary-active: var(--wahsh-gold-600);  /* #b89549 */
+  --brand-accent:         #e64001;
+  --brand-accent-hover:   #ff5a1f;
+  --brand-warm:           #fd9d04;
+  --brand-earth:          #2a6b41;
+
+  /* Semantic */
+  --status-success:    var(--c-success);
+  --status-success-bg: var(--c-success-bg);
+  --status-warning:    var(--c-warning);
+  --status-warning-bg: var(--c-warning-bg);
+  --status-danger:     var(--c-danger);
+  --status-danger-bg:  var(--c-danger-bg);
+  --status-info:       var(--c-info);
+  --status-info-bg:    var(--c-info-bg);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
+  --shadow-sm: 0 2px 6px -1px rgba(0, 0, 0, 0.35),
+               0 1px 2px -1px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 8px 18px -4px rgba(0, 0, 0, 0.45),
+               0 3px 8px -2px rgba(0, 0, 0, 0.50);
+  --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.55),
+               0 8px 18px -4px rgba(0, 0, 0, 0.40);
+  --shadow-xl: 0 36px 72px -18px rgba(0, 0, 0, 0.65);
+  --shadow-glow-brand: 0 0 0 3px rgba(200, 167, 90, 0.20),
+                       0 0 20px -4px rgba(200, 167, 90, 0.30);
+
+  --halo-brand: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(200, 167, 90, 0.12) 0%,
+    rgba(200, 167, 90, 0.03) 45%,
+    transparent 70%
+  );
+
+  --vignette: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+/* ============================================================
+   SURFACE 2 — Wahsh · Light  (DEFAULT)
+   Brand black #212121 (primary) · Canvas #FBF8F4 · Gold accent
+   WCAG AAA contrast: #212121 on #FBF8F4 = 16.5:1
+   ============================================================ */
+
+[data-theme="wahsh"][data-mode="light"] {
+  /* Backgrounds — all cards stay white; canvas is the warm tone
+     bg-canvas        page background (warm off-white)
+     bg-surface       primary card fill — pure white
+     bg-surface-raised inner sub-surfaces (inputs, hover) — barely-tinted white
+     bg-surface-overlay modals, popovers — pure white
+     bg-muted         visible warm subtle bg (table headers, code blocks) */
+  --bg-canvas:          #fbf8f4;   /* ✦ confirmed brand background */
+  --bg-surface:         #ffffff;   /* ✦ all cards = white */
+  --bg-surface-raised:  #fafaf8;   /* near-white for internal hierarchy */
+  --bg-surface-overlay: #ffffff;
+  --bg-muted:           #f0ebe3;
+
+  /* Text — dark on warm white (16.5:1 AAA) */
+  --text-primary:   #212121;       /* ✦ brand black — primary text */
+  --text-secondary: #4a4a4a;       /* 8.9:1  AAA */
+  --text-tertiary:  #8a8580;       /* 4.5:1  AA  */
+  --text-inverse:   #ffffff;
+  --text-on-brand:  #ffffff;       /* white on dark brand surfaces */
+
+  /* Borders — warm grey */
+  --border-default: #e5dfd5;
+  --border-subtle:  #efeae2;
+  --border-strong:  #bcb5a8;
+  --border-focus:   var(--wahsh-gold-500);  /* gold focus ring stays for premium feel */
+
+  /* Brand — black is the primary interactive colour
+     Gold reserved for accents only (icons, highlights, focus rings)
+     #212121 on white = 16.5:1 contrast (AAA) — best in class */
+  --brand-primary:        #212121;
+  --brand-primary-hover:  #383838;
+  --brand-primary-active: #0f0f0f;
+  --brand-accent:         var(--wahsh-gold-500);  /* #c8a75a */
+  --brand-accent-hover:   var(--wahsh-gold-400);
+  --brand-warm:           #fd9d04;
+  --brand-earth:          #2a6b41;
+
+  /* Semantic */
+  --status-success:    var(--c-success);
+  --status-success-bg: var(--c-success-bg);
+  --status-warning:    var(--c-warning);
+  --status-warning-bg: var(--c-warning-bg);
+  --status-danger:     var(--c-danger);
+  --status-danger-bg:  var(--c-danger-bg);
+  --status-info:       var(--c-info);
+  --status-info-bg:    var(--c-info-bg);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 14, 13, 0.06);
+  --shadow-sm: 0 2px 6px -1px rgba(15, 14, 13, 0.08),
+               0 1px 2px -1px rgba(15, 14, 13, 0.05);
+  --shadow-md: 0 8px 18px -4px rgba(15, 14, 13, 0.10),
+               0 3px 8px -2px rgba(15, 14, 13, 0.06);
+  --shadow-lg: 0 20px 40px -12px rgba(15, 14, 13, 0.12);
+  --shadow-xl: 0 36px 72px -18px rgba(15, 14, 13, 0.16);
+  --shadow-glow-brand: 0 0 0 3px rgba(142, 115, 51, 0.30),
+                       0 0 16px -4px rgba(142, 115, 51, 0.18);
+
+  --halo-brand: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(142, 115, 51, 0.10) 0%,
+    rgba(142, 115, 51, 0.03) 40%,
+    transparent 70%
+  );
+
+  --vignette: radial-gradient(
+    ellipse at center,
+    transparent 70%,
+    rgba(15, 14, 13, 0.03) 100%
+  );
+}
+
+/* ============================================================
+   SURFACE 3 — Forno · Dark
+   "Wood-fired oven at night"
+   ============================================================ */
+
+[data-theme="forno"][data-mode="dark"] {
+  --bg-canvas: var(--forno-shade-800);
+  --bg-surface: var(--forno-shade-700);
+  --bg-surface-raised: #2d3225;
+  --bg-surface-overlay: #353a2c;
+  --bg-muted: #2d3225;
+
+  --text-primary: var(--forno-cream-100);
+  --text-secondary: #b6b09a;
+  --text-tertiary: #807c69;
+  --text-inverse: var(--forno-shade-900);
+  --text-on-brand: var(--forno-cream-100);
+
+  --border-default: #3a4030;
+  --border-subtle: #2d3225;
+  --border-strong: #4a5240;
+  --border-focus: var(--forno-green-400);
+
+  --brand-primary: var(--forno-green-500);
+  --brand-primary-hover: var(--forno-green-400);
+  --brand-primary-active: var(--forno-green-600);
+  --brand-accent: var(--forno-red-500);
+  --brand-warm: var(--forno-amber-500);
+  --brand-earth: var(--forno-green-500);
+
+  --status-success: var(--c-success);
+  --status-success-bg: var(--c-success-bg);
+  --status-warning: var(--c-warning);
+  --status-warning-bg: var(--c-warning-bg);
+  --status-danger: var(--c-danger);
+  --status-danger-bg: var(--c-danger-bg);
+  --status-info: var(--c-info);
+  --status-info-bg: var(--c-info-bg);
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 6px -1px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 18px -4px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 36px 72px -18px rgba(0, 0, 0, 0.65);
+  --shadow-glow-brand: 0 0 0 4px rgba(42, 107, 65, 0.22),
+                        0 0 24px -4px rgba(42, 107, 65, 0.38);
+
+  --halo-brand: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(42, 107, 65, 0.16) 0%,
+    rgba(230, 64, 1, 0.06) 50%,
+    transparent 75%
+  );
+
+  --vignette: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+/* ============================================================
+   SURFACE 4 — Forno · Light
+   "Sunlit pizzeria"
+   ============================================================ */
+
+[data-theme="forno"][data-mode="light"] {
+  /* Cooler off-white with the faintest green undertone — not pasta-cream */
+  --bg-canvas: #f6f7f1;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #ffffff;
+  --bg-surface-overlay: #ffffff;
+  --bg-muted: #ecede2;
+
+  --text-primary: var(--forno-shade-900);
+  --text-secondary: #4a4a3d;
+  --text-tertiary: #71715f;
+  --text-inverse: #f6f7f1;
+  --text-on-brand: #ffffff;
+
+  --border-default: #dadbc9;
+  --border-subtle: #eaebde;
+  --border-strong: #b3b59f;
+  --border-focus: var(--forno-green-500);
+
+  --brand-primary: var(--forno-green-500);
+  --brand-primary-hover: var(--forno-green-600);
+  --brand-primary-active: #163e25;
+  --brand-accent: var(--forno-red-500);
+  --brand-warm: var(--forno-amber-500);
+  --brand-earth: var(--forno-green-500);
+
+  --status-success: var(--c-success);
+  --status-success-bg: var(--c-success-bg);
+  --status-warning: var(--c-warning);
+  --status-warning-bg: var(--c-warning-bg);
+  --status-danger: var(--c-danger);
+  --status-danger-bg: var(--c-danger-bg);
+  --status-info: var(--c-info);
+  --status-info-bg: var(--c-info-bg);
+
+  --shadow-xs: 0 1px 2px 0 rgba(36, 40, 24, 0.06);
+  --shadow-sm: 0 2px 6px -1px rgba(36, 40, 24, 0.08);
+  --shadow-md: 0 8px 18px -4px rgba(36, 40, 24, 0.10);
+  --shadow-lg: 0 20px 40px -12px rgba(36, 40, 24, 0.14);
+  --shadow-xl: 0 36px 72px -18px rgba(36, 40, 24, 0.18);
+  --shadow-glow-brand: 0 0 0 4px rgba(42, 107, 65, 0.16),
+                        0 0 24px -4px rgba(42, 107, 65, 0.28);
+
+  --halo-brand: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(42, 107, 65, 0.10) 0%,
+    transparent 70%
+  );
+
+  --vignette: radial-gradient(
+    ellipse at center,
+    transparent 65%,
+    rgba(36, 56, 30, 0.07) 100%
+  );
+}
+
+/* ============================================================
+   BASE STYLES — RTL, typography, atmospheric backdrop
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  direction: rtl;
+  font-family: "Thmanyah Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "kern";
+  background-color: var(--bg-canvas);
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Grain — atmospheric noise, subtle, never moves */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Light-mode grain is barely there — was 0.18, now 0.08 */
+[data-mode="light"] body::before {
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+}
+
+::selection {
+  background: var(--brand-primary);
+  color: var(--text-on-brand);
+}
+
+/* Numerics — tabular for prices, quantities */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================================================
+   MASHRABIYA — geometric Arabic-pattern decorative element
+   Used as backdrop on auth screens. Renders as fine 1px lines
+   in brand-primary at low opacity. Never decorative-only —
+   it identifies the brand's cultural register.
+   ============================================================ */
+
+.mashrabiya {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23c8a75a' stroke-width='0.6' opacity='0.5'><path d='M60 0 L60 120 M0 60 L120 60'/><path d='M60 12 L88 60 L60 108 L32 60 Z'/><path d='M60 30 L78 60 L60 90 L42 60 Z'/><circle cx='60' cy='60' r='22'/><circle cx='60' cy='60' r='12'/><path d='M60 38 L82 60 L60 82 L38 60 Z' transform='rotate(45 60 60)'/></g></svg>");
+  background-size: 120px 120px;
+  background-repeat: repeat;
+  opacity: 0.05;
+  mask-image: radial-gradient(
+    ellipse at center,
+    black 0%,
+    transparent 70%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="forno"] .mashrabiya {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%232a6b41' stroke-width='0.6' opacity='0.6'><path d='M60 0 L60 120 M0 60 L120 60'/><path d='M60 12 L88 60 L60 108 L32 60 Z'/><circle cx='60' cy='60' r='22'/><circle cx='60' cy='60' r='12'/></g></svg>");
+}
+
+[data-mode="light"] .mashrabiya {
+  opacity: 0.07;
+}
+
+/* ============================================================
+   FOCUS — gold ring, never blue
+   ============================================================ */
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow-brand);
+  border-radius: inherit;
+}
+
+button,
+[role="button"] {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ============================================================
+   GOLD HAIRLINE — decorative 1px gold accent
+   ============================================================ */
+
+.gold-hairline {
+  height: 1px;
+  background: linear-gradient(
+    to left,
+    transparent 0%,
+    var(--brand-primary) 20%,
+    var(--brand-primary) 80%,
+    transparent 100%
+  );
+  opacity: 0.35;
+}
+
+.gold-hairline-vert {
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--brand-primary) 20%,
+    var(--brand-primary) 80%,
+    transparent 100%
+  );
+  opacity: 0.35;
+}
+
+/* ============================================================
+   PIN DOT pulse — for typed digits
+   ============================================================ */
+
+@keyframes dot-fill {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dot-fill {
+  animation: dot-fill var(--d-fast) var(--ease-out-expo) forwards;
+}
+
+/* ============================================================
+   STAGGERED REVEAL — used on auth page entrance
+   ============================================================ */
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  animation: reveal-up var(--d-slow) var(--ease-out-expo) forwards;
+}
+
+.reveal-1 { animation-delay: 60ms; }
+.reveal-2 { animation-delay: 140ms; }
+.reveal-3 { animation-delay: 240ms; }
+.reveal-4 { animation-delay: 360ms; }
+.reveal-5 { animation-delay: 500ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   NUMERIC INPUT — hide native spinners
+   ============================================================ */
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

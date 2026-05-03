@@ -1,0 +1,1 @@
+- [El Wahsh Group brand architecture](project_wahsh_brands.md) — 3-brand food group, 2 themes, 4 surfaces. Confirmed palettes inside.
