@@ -117,7 +117,7 @@ function SlideToConfirm({
 
 export function ReceiveFlow() {
   const { user } = useAuth();
-  const { requests, branchConfirm, driverConfirm, openDispute } = useRequestsDB();
+  const { requests, branchConfirm, driverConfirm, openDispute, seedDemoInTransit } = useRequestsDB();
 
   const [phase, setPhase] = useState<Phase>("scan");
   const [scanInput, setScanInput] = useState("");
@@ -374,10 +374,32 @@ export function ReceiveFlow() {
             )}
 
             {inTransitOrders.length === 0 && (
-              <div className="text-center py-12">
+              <div className="text-center py-10">
                 <Package className="w-10 h-10 text-text-tertiary mx-auto mb-3" strokeWidth={1.25} />
                 <p className="text-sm font-medium text-text-secondary">لا توجد طلبات في الطريق حالياً</p>
-                <p className="text-xs text-text-tertiary mt-1">ستظهر هنا عندما يرسل المصنع طلبك</p>
+                <p className="text-xs text-text-tertiary mt-1 mb-5">ستظهر هنا عندما يرسل المصنع طلبك</p>
+
+                {/* Demo helper — generates a fully-populated in-transit order
+                    so a single account can test the receive flow end-to-end */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user?.branchId) return;
+                    const req = seedDemoInTransit(
+                      user.branchId,
+                      "فرع العصافرة",
+                      user.brandId ?? "wahsh"
+                    );
+                    loadOrder(req);
+                  }}
+                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-sm border border-brand-primary/40 text-brand-primary text-xs font-medium hover:bg-brand-primary/8 transition-all"
+                >
+                  <Package className="w-3.5 h-3.5" strokeWidth={2} />
+                  أنشئ طلب تجريبي للاختبار
+                </button>
+                <p className="text-[10px] text-text-tertiary mt-2 max-w-[260px] mx-auto leading-relaxed">
+                  يُنشِئ طلباً وهمياً جاهزاً للاستلام مع كود QR صالح لتجربة كامل الخطوات
+                </p>
               </div>
             )}
           </div>

@@ -244,6 +244,51 @@ export function useRequestsDB() {
     });
   }, []);
 
+  /* ── Seed a fake in-transit order so a single-account demo can test the
+   * full receive flow (scan/confirm/dispute) without needing the factory
+   * user to dispatch first. The order has a valid dispatchToken and a
+   * recent dispatchedAtISO so QR validation passes. */
+  const seedDemoInTransit = useCallback((branchId: string, branchName: string, brandId: BrandId): FactoryRequest => {
+    const nowDate = new Date();
+    const token = Array.from({ length: 8 }, () =>
+      "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]
+    ).join("");
+    const items: RequestItem[] = [
+      { catalogId: "c-burger-patty", name: "لحم برجر — قطعة 150ج", unit: "كجم",     requestedQty: 18 },
+      { catalogId: "c-bun",          name: "خبز برجر",              unit: "كرتونة", requestedQty: 4  },
+      { catalogId: "c-cheddar",      name: "جبنة شيدر شرائح",       unit: "كجم",     requestedQty: 6  },
+      { catalogId: "c-tomato",       name: "طماطم",                  unit: "كجم",     requestedQty: 12 },
+    ];
+    const dispatchItems: DispatchItem[] = items.map((it) => ({
+      catalogId: it.catalogId, name: it.name, unit: it.unit,
+      requestedQty: it.requestedQty,
+      // Mimic a real dispatch with a small shortage on cheddar
+      dispatchedQty: it.catalogId === "c-cheddar" ? it.requestedQty - 2 : it.requestedQty,
+    }));
+    const current = loadDB();
+    const req: FactoryRequest = {
+      id: `req-demo-${Date.now()}`,
+      requestNumber: nextReqNumber(current),
+      brandId, branchId, branchName,
+      items,
+      status: "in-transit",
+      priority: "normal",
+      createdAt: arabicRelative(new Date(Date.now() - 60 * 60 * 1000).toISOString()),
+      createdAtDate: new Date(Date.now() - 60 * 60 * 1000),
+      requestedDeliveryDate: "اليوم · 4:00 م",
+      note: "طلب تجريبي للاختبار",
+      totalItems: items.length,
+      dispatchItems,
+      dispatchNote: "نقصت 2 كجم من جبنة الشيدر بسبب نفاذ المخزون — سيُرسل الباقي غداً",
+      dispatchedAt: arabicDateTime(nowDate),
+      dispatchedAtISO: nowDate.toISOString(),
+      dispatchToken: token,
+      driverName: "محمود علي",
+    };
+    persist([...current, req]);
+    return req;
+  }, [persist]);
+
   const resetDB = useCallback(() => {
     localStorage.removeItem(DB_KEY);
     localStorage.removeItem(SEEDED_KEY);
@@ -265,6 +310,7 @@ export function useRequestsDB() {
     branchConfirm,
     driverConfirm,
     openDispute,
+    seedDemoInTransit,
     resetDB,
     getByBranch,
   };
