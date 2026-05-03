@@ -399,14 +399,26 @@ export function FactoryRequests() {
                     </button>
                   ) : null;
                 })()}
-                <button
-                  type="button"
-                  onClick={() => setTripPanelOpen(true)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-sm text-xs font-medium tracking-tight bg-brand-primary text-text-on-brand hover:bg-brand-primary-hover transition-all duration-fast active:scale-[0.985]"
-                >
-                  <Route className="w-3.5 h-3.5" strokeWidth={2} />
-                  تجميع كرحلة
-                </button>
+                {(() => {
+                  const allApproved = selectedRequests.length > 0 && selectedRequests.every((r) => r.status === "approved");
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => allApproved && setTripPanelOpen(true)}
+                      disabled={!allApproved}
+                      title={!allApproved ? "يمكن تجميع الطلبات المُوافَق عليها فقط" : ""}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-sm text-xs font-medium tracking-tight transition-all duration-fast",
+                        allApproved
+                          ? "bg-brand-primary text-text-on-brand hover:bg-brand-primary-hover active:scale-[0.985]"
+                          : "bg-bg-surface-raised text-text-tertiary border border-border-subtle cursor-not-allowed"
+                      )}
+                    >
+                      <Route className="w-3.5 h-3.5" strokeWidth={2} />
+                      تجميع كرحلة
+                    </button>
+                  );
+                })()}
                 {/* Status advance dropdown */}
                 <div className="relative">
                   <button
@@ -1194,47 +1206,14 @@ function TripPlanner({
             </ol>
           </div>
 
-          {/* Driver selection */}
+          {/* Driver selection — dropdown */}
           <div>
             <p className="text-[11px] tracking-[0.16em] uppercase text-text-tertiary mb-2">السائق</p>
-            <div className="space-y-2">
-              {DRIVERS.map((d) => {
-                const active = d.id === driverId;
-                const available = d.status === "available";
-                return (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => available && setDriverId(d.id)}
-                    disabled={!available}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-sm border text-right transition-all duration-fast",
-                      active
-                        ? "bg-brand-primary/[0.08] border-brand-primary text-text-primary"
-                        : available
-                        ? "bg-bg-surface border-border hover:border-border-strong"
-                        : "bg-bg-muted/40 border-border-subtle opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <span className={cn(
-                      "shrink-0 w-9 h-9 rounded-full flex items-center justify-center",
-                      active ? "bg-brand-primary text-text-on-brand" : "bg-bg-surface-raised text-text-tertiary"
-                    )}>
-                      <UserCircle2 className="w-4 h-4" strokeWidth={1.75} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium tracking-tight truncate">{d.name}</p>
-                      <p className="text-[11px] text-text-tertiary tabular truncate">{d.vehicle}</p>
-                    </div>
-                    {available ? (
-                      <Badge intent="success" size="sm" dot pulse={active}>متاح</Badge>
-                    ) : (
-                      <Badge intent="warning" size="sm">في رحلة</Badge>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <DriverDropdown
+              drivers={DRIVERS}
+              selectedId={driverId}
+              onSelect={setDriverId}
+            />
           </div>
 
           {/* Notes */}
@@ -1290,6 +1269,101 @@ function SummaryStat({ value, label }: { value: number; label: string }) {
       <p className="text-2xl font-bold tabular tracking-tight">{value}</p>
       <p className="text-[10px] text-text-tertiary tracking-[0.16em] uppercase mt-0.5">{label}</p>
     </Card>
+  );
+}
+
+/* ── Driver dropdown for trip planner ───────────────────────────────────── */
+
+function DriverDropdown({
+  drivers,
+  selectedId,
+  onSelect,
+}: {
+  drivers: MockDriver[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = drivers.find((d) => d.id === selectedId);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 h-12 rounded-sm border bg-bg-surface text-right transition-all duration-fast",
+          open ? "border-brand-primary shadow-glow-brand" : "border-border hover:border-border-strong"
+        )}
+      >
+        <span className="shrink-0 w-8 h-8 rounded-full bg-brand-primary/12 text-brand-primary flex items-center justify-center">
+          <UserCircle2 className="w-4 h-4" strokeWidth={1.75} />
+        </span>
+        <div className="flex-1 min-w-0 text-right">
+          {selected ? (
+            <>
+              <p className="text-sm font-medium tracking-tight truncate">{selected.name}</p>
+              <p className="text-[11px] text-text-tertiary tabular truncate">{selected.vehicle}</p>
+            </>
+          ) : (
+            <p className="text-sm text-text-tertiary">اختر سائقاً</p>
+          )}
+        </div>
+        {selected && (
+          selected.status === "available"
+            ? <Badge intent="success" size="sm" dot>متاح</Badge>
+            : <Badge intent="warning" size="sm">في رحلة</Badge>
+        )}
+        <ChevronUp className={cn("w-3.5 h-3.5 text-text-tertiary transition-transform duration-fast", open ? "" : "rotate-180")} strokeWidth={2} />
+      </button>
+
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-label="إغلاق"
+            className="fixed inset-0 z-30"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute top-full inset-x-0 mt-1.5 z-40 rounded-md bg-bg-canvas border border-border-subtle shadow-xl py-1 animate-slide-up max-h-[280px] overflow-y-auto">
+            {drivers.map((d) => {
+              const active = d.id === selectedId;
+              const available = d.status === "available";
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={!available}
+                  onClick={() => { if (available) { onSelect(d.id); setOpen(false); } }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors duration-fast",
+                    active && "bg-brand-primary/8",
+                    available
+                      ? "hover:bg-bg-surface-raised cursor-pointer"
+                      : "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <span className={cn(
+                    "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+                    active ? "bg-brand-primary text-text-on-brand" : "bg-bg-surface-raised text-text-tertiary"
+                  )}>
+                    <UserCircle2 className="w-4 h-4" strokeWidth={1.75} />
+                  </span>
+                  <div className="flex-1 min-w-0 text-right">
+                    <p className="text-sm font-medium tracking-tight truncate">{d.name}</p>
+                    <p className="text-[11px] text-text-tertiary tabular truncate">{d.vehicle}</p>
+                  </div>
+                  {available
+                    ? <Badge intent="success" size="sm" dot>متاح</Badge>
+                    : <Badge intent="warning" size="sm">في رحلة</Badge>}
+                  {active && <CheckCircle2 className="w-3.5 h-3.5 text-brand-primary shrink-0" strokeWidth={2.5} />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
