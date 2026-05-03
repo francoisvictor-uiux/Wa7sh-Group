@@ -37,8 +37,8 @@ function activePipelineStep(status: RequestStatus): number {
     case "requested":             return 0;
     case "approved":              return 1;
     case "preparing":             return 2;
-    case "loaded":                return 3;
-    case "in-transit":
+    case "loaded":
+    case "in-transit":            return 3;
     case "delivered":
     case "confirmed":
     case "closed":                return 4; // all 4 done, beyond factory
@@ -53,7 +53,7 @@ const PIPELINE_STEPS: Array<{ label: string; Icon: typeof Inbox }> = [
   { label: "الطلب",     Icon: Inbox       },
   { label: "الموافقة",  Icon: Check       },
   { label: "التحضير",   Icon: ChefHat     },
-  { label: "التحميل",   Icon: Package     },
+  { label: "الإرسال",   Icon: Truck       },
 ];
 
 interface Props {
@@ -169,7 +169,7 @@ function PipelineProgress({ status }: { status: RequestStatus }) {
       <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-md bg-status-danger/8 border border-status-danger/30">
         <XCircle className="w-3.5 h-3.5 text-status-danger shrink-0" strokeWidth={2} />
         <span className="text-[11px] font-medium text-status-danger">
-          {status === "cancelled" ? "أُلغي قبل التحميل" : "تم رفض الطلب"}
+          {status === "cancelled" ? "أُلغي قبل الإرسال" : "تم رفض الطلب"}
         </span>
       </div>
     );

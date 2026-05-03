@@ -42,13 +42,12 @@ import { cn } from "@/lib/utils";
 type ViewMode = "grid" | "table";
 type SortKey = "createdAt" | "branch" | "items" | "delivery";
 type SortDir = "asc" | "desc";
-type StatusGroup = "all" | "pending" | "preparing" | "loaded" | "in-transit" | "delivered" | "issues";
+type StatusGroup = "all" | "pending" | "preparing" | "in-transit" | "delivered" | "issues";
 
 const STATUS_GROUPS: { key: StatusGroup; label: string; statuses: RequestStatus[]; tone: "neutral" | "info" | "warning" | "success" | "danger"; Icon: LucideIcon }[] = [
   { key: "all",        label: "الكل",          statuses: [],                                                 tone: "neutral", Icon: ClipboardList },
   { key: "pending",    label: "بانتظار",       statuses: ["requested"],                                      tone: "warning", Icon: Clock },
   { key: "preparing",  label: "قيد التحضير",  statuses: ["approved", "preparing"],                          tone: "info",    Icon: ChefHat },
-  { key: "loaded",     label: "محمّل",          statuses: ["loaded"],                                         tone: "info",    Icon: Boxes },
   { key: "in-transit", label: "في الطريق",     statuses: ["in-transit"],                                     tone: "info",    Icon: Truck },
   { key: "delivered",  label: "تم التسليم",   statuses: ["delivered", "confirmed", "closed"],               tone: "success", Icon: PackageCheck },
   { key: "issues",     label: "نزاعات",        statuses: ["disputed", "rejected", "on-hold", "cancelled"],   tone: "danger",  Icon: AlertTriangle },
@@ -72,9 +71,7 @@ const statusMeta: Record<RequestStatus, { label: string; intent: "neutral" | "in
 const STATUS_ADVANCE_OPTIONS: { label: string; status: RequestStatus; Icon: LucideIcon; tone: string }[] = [
   { label: "موافقة على الطلب", status: "approved",   Icon: CheckCircle2,  tone: "text-status-success" },
   { label: "بدء التحضير",      status: "preparing",  Icon: ChefHat,       tone: "text-status-info"    },
-  { label: "تم التحميل",       status: "loaded",     Icon: Boxes,         tone: "text-brand-primary"  },
   { label: "إرسال للفرع",      status: "in-transit", Icon: Truck,         tone: "text-status-info"    },
-  { label: "تم التسليم",       status: "delivered",  Icon: PackageCheck,  tone: "text-status-success" },
 ];
 
 interface MockDriver {
@@ -387,7 +384,7 @@ export function FactoryRequests() {
                 </button>
                 {selected.size === 1 && (() => {
                   const req = selectedRequests[0];
-                  const canDispatch = ["approved","preparing","loaded"].includes(req?.status ?? "");
+                  const canDispatch = ["approved","preparing"].includes(req?.status ?? "");
                   return canDispatch ? (
                     <button
                       type="button"
@@ -848,14 +845,14 @@ function RequestCard({ request, query, selected, onToggle }: { request: FactoryR
 /* ----------------------------------------------------------------------
  * Pipeline progress — 4-step factory flow stepper rendered inside each
  * card. Shows where the order sits between branch request and driver
- * handover (الطلب → الموافقة → التحضير → التحميل).
+ * handover (الطلب → الموافقة → التحضير → الإرسال).
  * -------------------------------------------------------------------- */
 
 const PIPELINE_STEPS: Array<{ label: string; Icon: LucideIcon }> = [
   { label: "الطلب",     Icon: ClipboardList },
   { label: "الموافقة",  Icon: CheckCircle2  },
   { label: "التحضير",   Icon: ChefHat       },
-  { label: "التحميل",   Icon: PackageCheck  },
+  { label: "الإرسال",   Icon: Truck         },
 ];
 
 function activePipelineStep(status: RequestStatus): number {
@@ -863,8 +860,8 @@ function activePipelineStep(status: RequestStatus): number {
     case "requested":             return 0;
     case "approved":              return 1;
     case "preparing":             return 2;
-    case "loaded":                return 3;
-    case "in-transit":
+    case "loaded":
+    case "in-transit":            return 3;
     case "delivered":
     case "confirmed":
     case "closed":                return 4;
@@ -883,7 +880,7 @@ function PipelineProgress({ status }: { status: RequestStatus }) {
       <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-status-danger/8 border border-status-danger/30">
         <Trash2 className="w-3.5 h-3.5 text-status-danger shrink-0" strokeWidth={2} />
         <span className="text-[11px] font-medium text-status-danger">
-          {status === "cancelled" ? "أُلغي قبل التحميل" : "تم رفض الطلب"}
+          {status === "cancelled" ? "أُلغي قبل الإرسال" : "تم رفض الطلب"}
         </span>
       </div>
     );

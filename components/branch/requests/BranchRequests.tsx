@@ -39,7 +39,7 @@ const STATUS_GROUPS: { key: StatusGroup; label: string; statuses: RequestStatus[
   { key: "all",        label: "الكل",         statuses: [],                                               tone: "neutral", Icon: ClipboardList },
   { key: "pending",    label: "بانتظار",      statuses: ["requested"],                                    tone: "warning", Icon: Clock },
   { key: "preparing",  label: "قيد التحضير", statuses: ["approved", "preparing"],                        tone: "info",    Icon: ChefHat },
-  { key: "in-transit", label: "في الطريق",    statuses: ["loaded", "in-transit"],                        tone: "info",    Icon: Truck },
+  { key: "in-transit", label: "في الطريق",    statuses: ["in-transit"],                                  tone: "info",    Icon: Truck },
   { key: "delivered",  label: "تم التسليم",  statuses: ["delivered", "confirmed", "closed"],             tone: "success", Icon: PackageCheck },
   { key: "issues",     label: "نزاعات",       statuses: ["disputed", "rejected", "on-hold", "cancelled"], tone: "danger",  Icon: AlertTriangle },
 ];

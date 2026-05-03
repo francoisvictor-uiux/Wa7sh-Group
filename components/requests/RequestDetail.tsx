@@ -395,7 +395,7 @@ function RequestDetailDesktop({ request, canApprove, isFactory, approved, reject
             </h2>
           </div>
           <Badge intent="brand" size="sm">
-            8 خطوات
+            7 خطوات
           </Badge>
         </div>
         <RequestTimeline request={request} orientation="horizontal" />

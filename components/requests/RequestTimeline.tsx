@@ -24,7 +24,6 @@ const STEPS: TimelineStep[] = [
   { key: "requested", label: "تم الطلب", owner: "مدير الفرع", icon: Clock },
   { key: "approved", label: "تمت الموافقة", owner: "مدير المصنع", icon: Check },
   { key: "preparing", label: "جاري التحضير", owner: "رئيس المخزن", icon: ChefHat },
-  { key: "loaded", label: "تم التحميل", owner: "الديسباتشر", icon: Package },
   { key: "in-transit", label: "في الطريق", owner: "السائق", icon: Truck },
   { key: "delivered", label: "تم التسليم", owner: "السائق + GPS", icon: CheckCircle2 },
   { key: "confirmed", label: "تم التأكيد", owner: "مدير الفرع", icon: CheckCircle2 },
