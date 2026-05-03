@@ -823,7 +823,7 @@ function RequestCard({ request, query, selected, onToggle }: { request: FactoryR
           <span className="text-text-tertiary">·</span>
           <span className="truncate flex-1">التسليم: {request.requestedDeliveryDate}</span>
           <Link
-            href={`/requests/${request.id}`}
+            href={`/requests/detail?id=${request.id}`}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 text-brand-primary hover:underline underline-offset-4"
           >
@@ -1079,7 +1079,7 @@ function RequestRow({ request, query, selected, onToggle }: { request: FactoryRe
         <span className="text-xs text-text-secondary">{request.requestedDeliveryDate}</span>
       </td>
       <td className="px-2 align-middle text-left">
-        <Link href={`/requests/${request.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity duration-fast inline-flex items-center justify-center w-8 h-8 rounded-sm text-text-tertiary hover:text-text-primary hover:bg-bg-surface-raised">
+        <Link href={`/requests/detail?id=${request.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity duration-fast inline-flex items-center justify-center w-8 h-8 rounded-sm text-text-tertiary hover:text-text-primary hover:bg-bg-surface-raised">
           <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
         </Link>
       </td>

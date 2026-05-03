@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { useDevice } from "@/hooks/useDevice";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequestsDB } from "@/lib/db/requests";
 import { requests, type RequestRecord } from "@/lib/mock/requests";
+import type { FactoryRequest } from "@/lib/mock/factoryRequests";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -26,11 +28,46 @@ import { RequestTimeline } from "./RequestTimeline";
 import { SwipeApproval } from "./SwipeApproval";
 import { cn } from "@/lib/utils";
 
+/** Adapt a FactoryRequest (DB document) to the RequestRecord shape used by
+ * the existing detail UI. Lets DB-created requests render through the same
+ * component without a parallel implementation. */
+function adaptFactoryRequest(r: FactoryRequest): RequestRecord {
+  return {
+    id: r.id,
+    number: r.requestNumber,
+    status: r.status,
+    fromBranchId: r.branchId,
+    fromBranchName: r.branchName,
+    toFactory: "المصنع الرئيسي",
+    createdBy: "—",
+    createdAt: r.createdAt,
+    approvedBy: r.approvedBy,
+    approvedAt: r.approvedAt,
+    scheduledDelivery: r.requestedDeliveryDate,
+    items: r.items.map((it) => ({
+      catalogId: it.catalogId,
+      name: it.name,
+      quantity: it.requestedQty,
+      unit: it.unit as any,
+      pricePerUnit: 0,
+    })),
+    totalValue: 0,
+    itemCount: r.items.length,
+    priority: r.priority === "urgent" ? "rush" : "normal",
+    note: r.note,
+  };
+}
+
 export function RequestDetail({ requestId }: { requestId: string }) {
   const device = useDevice();
   const router = useRouter();
   const { user } = useAuth();
-  const request = requests.find((r) => r.id === requestId) ?? requests[0];
+  const { requests: dbRequests } = useRequestsDB();
+  // Look up in the static mock first, then in the live DB. DB-created
+  // requests are adapted into the RequestRecord shape on the fly.
+  const dbHit = dbRequests.find((r) => r.id === requestId);
+  const staticHit = requests.find((r) => r.id === requestId);
+  const request = staticHit ?? (dbHit ? adaptFactoryRequest(dbHit) : requests[0]);
   const [approved, setApproved] = useState(false);
   const [rejected, setRejected] = useState(false);
 

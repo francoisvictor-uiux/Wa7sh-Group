@@ -202,7 +202,7 @@ function PendingCallout() {
           </div>
         </div>
         <Link
-          href={`/requests/${oldest.id}`}
+          href={`/requests/detail?id=${oldest.id}`}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-warning hover:text-status-warning/80 transition-colors shrink-0"
         >
           راجع الآن
@@ -270,7 +270,7 @@ function RequestsTable({ rows }: { rows: RequestRecord[] }) {
                   </td>
                   <td className="px-5 py-3.5 text-left">
                     <Link
-                      href={`/requests/${r.id}`}
+                      href={`/requests/detail?id=${r.id}`}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-brand-primary hover:text-brand-primary-hover transition-colors"
                     >
                       عرض
@@ -296,7 +296,7 @@ function RequestRow({ request }: { request: RequestRecord }) {
   const isUrgent  = request.priority === "rush";
 
   return (
-    <Link href={`/requests/${request.id}`} className="block group">
+    <Link href={`/requests/detail?id=${request.id}`} className="block group">
       <Card
         padding="md"
         className="group-hover:border-border-strong group-hover:shadow-md transition-all duration-fast"

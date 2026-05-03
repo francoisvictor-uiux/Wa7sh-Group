@@ -363,7 +363,7 @@ function RequestRow({ request }: { request: FactoryRequest }) {
             </p>
           </div>
           <Link
-            href={`/requests/${request.id}`}
+            href={`/requests/detail?id=${request.id}`}
             onClick={(e) => e.stopPropagation()}
             className="shrink-0 text-[11px] text-text-tertiary hover:text-brand-primary transition-colors mt-0.5"
           >

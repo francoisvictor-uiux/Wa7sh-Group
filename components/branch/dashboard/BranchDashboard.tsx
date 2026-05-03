@@ -414,7 +414,7 @@ function RecentRequests({ requests }: { requests: typeof factoryRequests }) {
         return (
           <Link
             key={r.id}
-            href={`/requests/${r.id}`}
+            href={`/requests/detail?id=${r.id}`}
             className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-surface-raised transition-colors duration-fast group"
           >
             <div className="flex-1 min-w-0">
