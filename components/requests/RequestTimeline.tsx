@@ -4,9 +4,9 @@ import {
   Clock,
   Check,
   ChefHat,
-  Package,
   Truck,
-  CheckCircle2,
+  PackageCheck,
+  ClipboardCheck,
   Archive,
   type LucideIcon,
 } from "lucide-react";
@@ -21,13 +21,13 @@ interface TimelineStep {
 }
 
 const STEPS: TimelineStep[] = [
-  { key: "requested", label: "تم الطلب", owner: "مدير الفرع", icon: Clock },
-  { key: "approved", label: "تمت الموافقة", owner: "مدير المصنع", icon: Check },
-  { key: "preparing", label: "جاري التحضير", owner: "رئيس المخزن", icon: ChefHat },
-  { key: "in-transit", label: "في الطريق", owner: "السائق", icon: Truck },
-  { key: "delivered", label: "تم التسليم", owner: "السائق + GPS", icon: CheckCircle2 },
-  { key: "confirmed", label: "تم التأكيد", owner: "مدير الفرع", icon: CheckCircle2 },
-  { key: "closed", label: "مغلق", owner: "النظام", icon: Archive },
+  { key: "requested",  label: "تم الطلب",         owner: "مدير الفرع",   icon: Clock },
+  { key: "approved",   label: "تمت الموافقة",     owner: "مدير المصنع",  icon: Check },
+  { key: "preparing",  label: "جاري التحضير",     owner: "رئيس المخزن",  icon: ChefHat },
+  { key: "in-transit", label: "في الطريق",         owner: "السائق",        icon: Truck },
+  { key: "delivered",  label: "تم التسليم",       owner: "السائق",        icon: PackageCheck },
+  { key: "confirmed",  label: "تم مطابقة الطلب", owner: "مدير الفرع",   icon: ClipboardCheck },
+  { key: "closed",     label: "إغلاق",             owner: "النظام",        icon: Archive },
 ];
 
 function statusToStep(status: RequestStatus): number {
@@ -136,12 +136,17 @@ function HorizontalStep({
       ? "text-brand-primary font-medium"
       : "text-text-tertiary";
 
-  const connectorClass =
-    state === "complete"
+  // Connector facing the previous (right neighbour, completed) step:
+  // green when this step is current or complete, gray otherwise.
+  const rightConnectorClass =
+    state === "complete" || state === "current"
       ? "bg-status-success/60"
-      : state === "current"
-      ? "bg-brand-primary/40"
       : "bg-border";
+
+  // Connector facing the next (left neighbour, pending/current) step:
+  // green only when this step is complete (i.e. fully done), gray otherwise.
+  const leftConnectorClass =
+    state === "complete" ? "bg-status-success/60" : "bg-border";
 
   return (
     <li className="flex-1 min-w-[88px] relative">
@@ -151,7 +156,7 @@ function HorizontalStep({
         <div
           className={cn(
             "absolute top-5 left-1/2 right-0 h-0.5 transition-colors duration-fast",
-            connectorClass
+            rightConnectorClass
           )}
         />
       )}
@@ -160,11 +165,7 @@ function HorizontalStep({
         <div
           className={cn(
             "absolute top-5 right-1/2 left-0 h-0.5 transition-colors duration-fast",
-            state === "current" || state === "complete"
-              ? state === "complete"
-                ? "bg-status-success/60"
-                : "bg-border"
-              : "bg-border"
+            leftConnectorClass
           )}
         />
       )}
@@ -185,11 +186,11 @@ function HorizontalStep({
           )}
           <Icon className="w-4 h-4" strokeWidth={2.25} />
         </div>
-        <div className="text-center min-w-0">
-          <p className={cn("text-[11px] tracking-tight leading-tight", labelClass)}>
+        <div className="text-center min-w-0" style={{ fontFeatureSettings: '"kern"', letterSpacing: 0 }}>
+          <p className={cn("text-[11px] leading-tight", labelClass)}>
             {step.label}
           </p>
-          <p className="text-[10px] text-text-tertiary mt-0.5 leading-tight truncate">
+          <p className="text-[10px] text-text-tertiary mt-0.5 leading-tight">
             {step.owner}
           </p>
         </div>
@@ -246,13 +247,11 @@ function VerticalStep({
           />
         )}
       </div>
-      <div className={cn("flex-1 pb-2", state === "pending" && "opacity-60")}>
-        <p
-          className={cn(
-            "text-sm tracking-tight leading-tight",
-            state === "current" ? "text-brand-primary font-medium" : ""
-          )}
-        >
+      <div
+        className={cn("flex-1 pb-2", state === "pending" && "opacity-60")}
+        style={{ fontFeatureSettings: '"kern"', letterSpacing: 0 }}
+      >
+        <p className={cn("text-sm leading-tight", state === "current" ? "text-brand-primary font-medium" : "")}>
           {step.label}
         </p>
         <p className="text-[11px] text-text-tertiary mt-0.5">{step.owner}</p>

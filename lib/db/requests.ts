@@ -90,6 +90,7 @@ export interface CreateRequestPayload {
   brandId: BrandId;
   branchId: string;
   branchName: string;
+  createdBy?: string;
   items: RequestItem[];
   priority: "normal" | "urgent";
   note?: string;
@@ -102,6 +103,15 @@ export interface StatusUpdatePayload {
   rejectedBy?: string;
   rejectedAt?: string;
   rejectionReason?: string;
+}
+
+export interface DispatchDriverInfo {
+  name?: string;
+  id?: string;
+  phone?: string;
+  nationalId?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
 }
 
 export function useRequestsDB() {
@@ -140,6 +150,7 @@ export function useRequestsDB() {
       brandId: payload.brandId,
       branchId: payload.branchId,
       branchName: payload.branchName,
+      createdBy: payload.createdBy,
       items: payload.items,
       status: "requested",
       priority: payload.priority,
@@ -166,6 +177,35 @@ export function useRequestsDB() {
     });
   }, []);
 
+  /* ── Adjust quantities (factory edits before approval). Stores the
+   * factory's number in `approvedQty` while keeping the original
+   * `requestedQty` immutable so both sides see the diff. The reason
+   * note is required by the UI so the branch can see why. */
+  const updateItems = useCallback((
+    id: string,
+    adjustments: Array<{ catalogId: string; approvedQty: number }>,
+    meta: { note: string; by?: string },
+  ) => {
+    const now = arabicDateTime();
+    setRequests((prev) => {
+      const next = prev.map((r) => {
+        if (r.id !== id) return r;
+        const map = new Map(adjustments.map((a) => [a.catalogId, a.approvedQty]));
+        return {
+          ...r,
+          items: r.items.map((it) =>
+            map.has(it.catalogId) ? { ...it, approvedQty: map.get(it.catalogId)! } : it
+          ),
+          adjustmentNote: meta.note,
+          adjustedBy: meta.by,
+          adjustedAt: now,
+        };
+      });
+      saveDB(next);
+      return next;
+    });
+  }, []);
+
   /* ── Bulk status update ── */
   const bulkUpdateStatus = useCallback((ids: string[], status: RequestStatus, meta: StatusUpdatePayload = {}) => {
     setRequests((prev) => {
@@ -184,17 +224,24 @@ export function useRequestsDB() {
     id: string,
     dispatchItems: DispatchItem[],
     dispatchNote?: string,
-    driverName?: string
+    driver?: DispatchDriverInfo | string
   ) => {
     const nowDate = new Date();
     const humanNow = arabicDateTime(nowDate);
     const token = Array.from({ length: 8 }, () =>
       "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]
     ).join("");
+    const d: DispatchDriverInfo = typeof driver === "string" ? { name: driver } : (driver ?? {});
     setRequests((prev) => {
       const next = prev.map((r) => r.id === id ? {
         ...r, status: "in-transit" as const,
-        dispatchItems, dispatchNote, driverName,
+        dispatchItems, dispatchNote,
+        driverName: d.name,
+        driverId: d.id,
+        driverPhone: d.phone,
+        driverNationalId: d.nationalId,
+        driverVehicleNumber: d.vehicleNumber,
+        driverVehicleType: d.vehicleType,
         dispatchedAt: humanNow,
         dispatchedAtISO: nowDate.toISOString(),
         dispatchToken: token,
@@ -305,6 +352,7 @@ export function useRequestsDB() {
     requests,
     createRequest,
     updateStatus,
+    updateItems,
     bulkUpdateStatus,
     dispatchOrder,
     branchConfirm,

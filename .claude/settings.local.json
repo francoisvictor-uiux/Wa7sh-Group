@@ -62,7 +62,8 @@
       "Bash(magick \"d:/Wa7sh Burger/Wa7sh-Group/Logo Login.png\" -resize 480x480 -quality 92 \"d:/Wa7sh Burger/Wa7sh-Group/public/login/logo.webp\")",
       "Bash(curl -s -o /dev/null -w \"logo: %{http_code}\\\\n/login: %{http_code}\\\\n\" \"http://localhost:3000/login/logo.webp\" -o /dev/null -w \"logo: %{http_code}\\\\n\")",
       "Bash(git -C \"d:/Wa7sh Burger/Wa7sh-Group\" status -s)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(node --input-type=module -e ' *)"
     ]
   }
 }

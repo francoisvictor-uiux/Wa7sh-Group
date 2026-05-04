@@ -89,7 +89,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             {trailingIcon}
           </>
         )}
-        <span>{children}</span>
+        {/* inline-flex so any icon passed inline alongside text inside
+            children renders on the same line — without it, Tailwind's
+            preflight makes SVGs `display: block` and they stack above
+            the text in RTL. */}
+        <span className="inline-flex items-center gap-2">{children}</span>
       </button>
     );
   }

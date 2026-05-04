@@ -74,17 +74,17 @@ export function NavDesktop({ children }: { children: React.ReactNode }) {
 
           <div className={cn(
             "flex-1 max-w-md mx-auto h-9 px-3 rounded-md",
-            "border border-border-subtle bg-bg-surface/40",
-            "hover:border-border-strong hover:bg-bg-surface",
-            "transition-colors duration-fast flex items-center gap-2 cursor-pointer"
+            "border border-border-subtle bg-bg-surface shadow-sm",
+            "hover:border-border-strong hover:shadow",
+            "transition-all duration-fast flex items-center gap-2 cursor-pointer"
           )}>
             <Search className="w-3.5 h-3.5 text-text-tertiary" strokeWidth={1.75} />
             <span className="text-xs text-text-tertiary flex-1">
               ابحث في كل النظام...
             </span>
             <kbd className="hidden md:inline-flex items-center gap-0.5 text-[10px] text-text-tertiary font-mono">
-              <span className="px-1 py-0.5 rounded bg-bg-canvas border border-border-subtle">⌘</span>
-              <span className="px-1 py-0.5 rounded bg-bg-canvas border border-border-subtle">K</span>
+              <span className="px-1 py-0.5 rounded bg-bg-surface-raised border border-border-subtle">⌘</span>
+              <span className="px-1 py-0.5 rounded bg-bg-surface-raised border border-border-subtle">K</span>
             </kbd>
           </div>
 

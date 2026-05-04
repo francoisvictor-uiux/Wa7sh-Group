@@ -73,7 +73,7 @@ export function FactoryDashboard() {
         <SectionLabel>إجراءات سريعة</SectionLabel>
         <div className={cn("grid gap-3 mt-3", isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3")}>
           <QuickActionCard
-            href="/requests/new"
+            href="/suppliers/new"
             icon={ClipboardList}
             label="طلب من مورد"
             description="أنشئ طلب شراء من مورد"
@@ -89,7 +89,7 @@ export function FactoryDashboard() {
             shortcut="I"
           />
           <QuickActionCard
-            href="/requests/receive"
+            href="/suppliers/receive"
             icon={PackageCheck}
             label="استلام من مورد"
             description="سجل استلام بضاعة جديدة"

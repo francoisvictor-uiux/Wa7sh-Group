@@ -57,8 +57,8 @@ export function UserMenu({
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "inline-flex items-center gap-2.5 rounded-md",
-          "border border-border-subtle bg-bg-surface/60",
-          "hover:border-border-strong hover:bg-bg-surface",
+          "border border-border-subtle bg-bg-surface shadow-sm",
+          "hover:border-border-strong hover:shadow",
           "transition-all duration-fast ease-out-expo",
           variant === "full" ? "h-10 pr-2.5 pl-2" : "h-9 pr-2 pl-1.5"
         )}

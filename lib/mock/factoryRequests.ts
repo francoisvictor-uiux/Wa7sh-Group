@@ -38,6 +38,10 @@ export interface FactoryRequest {
   createdAtDate: Date;
   requestedDeliveryDate: string;
   note?: string;
+  createdBy?: string;
+  adjustmentNote?: string;       // factory's justification for editing qty
+  adjustedAt?: string;
+  adjustedBy?: string;
   approvedBy?: string;
   approvedAt?: string;
   rejectedBy?: string;
@@ -51,6 +55,11 @@ export interface FactoryRequest {
   dispatchedAtISO?: string;   // for QR expiry calculations
   dispatchToken?: string;     // 8-char security token embedded in the QR
   driverName?: string;
+  driverId?: string;          // optional ref to drivers.ts when picked from dropdown
+  driverPhone?: string;
+  driverNationalId?: string;
+  driverVehicleNumber?: string;
+  driverVehicleType?: string;
   /* ── Receive (branch fills on arrival) ── */
   branchConfirmedAt?: string;
   driverConfirmedAt?: string;

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, Truck, QrCode, Check, Minus, Plus, AlertTriangle, Clock } from "lucide-react";
+import { X, Truck, QrCode, Check, Clock, ChevronDown, UserPlus, User, Printer } from "lucide-react";
 import { type FactoryRequest, type DispatchItem } from "@/lib/mock/factoryRequests";
 import { useRequestsDB } from "@/lib/db/requests";
+import { drivers, type Driver } from "@/lib/mock/drivers";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
@@ -94,8 +95,10 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
   // up the dispatchToken + dispatchedAtISO that were just generated.
   const liveRequest = requests.find((r) => r.id === request.id) ?? request;
 
-  // Init dispatch items from approved/requested quantities
-  const [dispatchItems, setDispatchItems] = useState<DispatchItem[]>(
+  // Quantities are finalized at approval time (factory edits in the
+  // request detail before approving), so the dispatch panel only reads
+  // them — no edit controls here.
+  const dispatchItems: DispatchItem[] = useMemo(() => (
     request.items.map((it) => ({
       catalogId: it.catalogId,
       name: it.name,
@@ -103,21 +106,68 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
       requestedQty: it.requestedQty,
       dispatchedQty: it.approvedQty ?? it.requestedQty,
     }))
-  );
+  ), [request.items]);
+
   const [note, setNote] = useState("");
+  const [driverMode, setDriverMode] = useState<"existing" | "new">("existing");
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [driverName, setDriverName] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [driverNationalId, setDriverNationalId] = useState("");
+  const [driverVehicleNumber, setDriverVehicleNumber] = useState("");
+  const [driverVehicleType, setDriverVehicleType] = useState("");
+  const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [phase, setPhase] = useState<"edit" | "qr">("edit");
 
-  const hasDiff = dispatchItems.some((it) => it.dispatchedQty !== it.requestedQty);
+  const selectedDriver: Driver | undefined = useMemo(
+    () => drivers.find((d) => d.id === selectedDriverId),
+    [selectedDriverId]
+  );
 
-  function updateQty(catalogId: string, qty: number) {
-    setDispatchItems((prev) =>
-      prev.map((it) => it.catalogId === catalogId ? { ...it, dispatchedQty: Math.max(0, qty) } : it)
-    );
+  const driverReady = driverMode === "existing"
+    ? !!selectedDriver
+    : driverName.trim().length > 0 && driverPhone.trim().length > 0;
+
+  function pickDriver(d: Driver) {
+    setSelectedDriverId(d.id);
+    setDriverPickerOpen(false);
+  }
+
+  function switchToNewDriver() {
+    setDriverMode("new");
+    setSelectedDriverId("");
+    setDriverName("");
+    setDriverPhone("");
+    setDriverNationalId("");
+    setDriverVehicleNumber("");
+    setDriverVehicleType("");
+  }
+
+  function switchToExistingDriver() {
+    setDriverMode("existing");
+    setDriverName("");
+    setDriverPhone("");
+    setDriverNationalId("");
+    setDriverVehicleNumber("");
+    setDriverVehicleType("");
   }
 
   function handleDispatch() {
-    dispatchOrder(request.id, dispatchItems, note || undefined, driverName || undefined);
+    const driverPayload = driverMode === "existing" && selectedDriver ? {
+      id:            selectedDriver.id,
+      name:          selectedDriver.name,
+      phone:         selectedDriver.phone,
+      nationalId:    selectedDriver.nationalId,
+      vehicleNumber: selectedDriver.vehicleNumber,
+      vehicleType:   selectedDriver.vehicleType,
+    } : {
+      name:          driverName.trim()       || undefined,
+      phone:         driverPhone.trim()      || undefined,
+      nationalId:    driverNationalId.trim() || undefined,
+      vehicleNumber: driverVehicleNumber.trim() || undefined,
+      vehicleType:   driverVehicleType.trim()   || undefined,
+    };
+    dispatchOrder(request.id, dispatchItems, note || undefined, driverPayload);
     setPhase("qr");
   }
 
@@ -145,82 +195,161 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
         {phase === "edit" ? (
           <>
             <div className="flex-1 overflow-y-auto">
-              {/* Items */}
+              {/* Items — read-only, qty already finalized at approval */}
               <div className="px-5 pt-4 pb-2">
                 <p className="text-[10px] tracking-[0.16em] uppercase text-text-tertiary mb-3">
-                  الأصناف — عدّل الكميات إذا اختلفت عن الطلب
+                  الأصناف المُرسلة
                 </p>
                 <div className="space-y-2">
-                  {dispatchItems.map((it) => {
-                    const diff = it.dispatchedQty - it.requestedQty;
-                    const isDiff = diff !== 0;
-                    return (
-                      <div key={it.catalogId}
-                        className={cn(
-                          "flex items-center gap-3 rounded-md border px-3 py-2.5",
-                          isDiff ? "border-status-warning/50 bg-status-warning/5" : "border-border-subtle bg-bg-surface"
-                        )}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{it.name}</p>
-                          <p className="text-[10px] text-text-tertiary">
-                            طُلب: <span className="font-bold tabular">{it.requestedQty}</span> {it.unit}
-                            {isDiff && (
-                              <span className={cn("mr-2 font-medium", diff < 0 ? "text-status-danger" : "text-status-success")}>
-                                ({diff > 0 ? "+" : ""}{diff} {it.unit})
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button type="button" onClick={() => updateQty(it.catalogId, it.dispatchedQty - 1)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center bg-status-danger text-white shadow-sm hover:bg-status-danger/85 active:scale-90 transition-all">
-                            <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
-                          </button>
-                          <input
-                            type="number"
-                            value={it.dispatchedQty}
-                            onChange={(e) => updateQty(it.catalogId, Number(e.target.value))}
-                            className="w-14 h-8 text-center text-sm font-bold tabular border border-border-subtle rounded-sm bg-bg-surface outline-none focus:border-brand-primary"
-                          />
-                          <button type="button" onClick={() => updateQty(it.catalogId, it.dispatchedQty + 1)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center bg-status-success text-white shadow-sm hover:bg-status-success/85 active:scale-90 transition-all">
-                            <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
-                          </button>
-                        </div>
+                  {dispatchItems.map((it) => (
+                    <div
+                      key={it.catalogId}
+                      className="flex items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-3 py-2.5"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{it.name}</p>
                       </div>
-                    );
-                  })}
+                      <p className="text-sm font-bold tabular tracking-tight shrink-0">
+                        {it.dispatchedQty}
+                        <span className="text-[10px] text-text-tertiary font-normal mr-1">{it.unit}</span>
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {hasDiff && (
-                <div className="mx-5 mt-2 rounded-md border border-status-warning/40 bg-status-warning/8 px-3 py-2.5 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-status-warning shrink-0 mt-0.5" strokeWidth={1.75} />
-                  <p className="text-xs text-status-warning leading-relaxed">
-                    بعض الكميات تختلف عن الطلب — يجب إضافة ملاحظة لإعلام الفرع
-                  </p>
-                </div>
-              )}
-
               {/* Driver + Note */}
-              <div className="px-5 pt-4 pb-4 space-y-3">
+              <div className="px-5 pt-4 pb-4 space-y-4">
                 <div>
-                  <label className="block text-[10px] tracking-[0.16em] uppercase text-text-tertiary mb-1.5">اسم السائق (اختياري)</label>
-                  <input
-                    value={driverName}
-                    onChange={(e) => setDriverName(e.target.value)}
-                    placeholder="مثال: محمود علي"
-                    className="w-full h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight transition-all"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[10px] tracking-[0.16em] uppercase text-text-tertiary">السائق</label>
+                    <button
+                      type="button"
+                      onClick={driverMode === "existing" ? switchToNewDriver : switchToExistingDriver}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-primary hover:underline"
+                    >
+                      {driverMode === "existing" ? (
+                        <>
+                          <UserPlus className="w-3 h-3" strokeWidth={2} />
+                          سائق جديد (مش مسجل)
+                        </>
+                      ) : (
+                        <>
+                          <User className="w-3 h-3" strokeWidth={2} />
+                          اختر من المسجلين
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {driverMode === "existing" ? (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setDriverPickerOpen((v) => !v)}
+                        className={cn(
+                          "w-full h-10 px-3 rounded-sm text-sm bg-bg-surface border outline-none tracking-tight transition-all",
+                          "flex items-center justify-between",
+                          driverPickerOpen ? "border-brand-primary" : "border-border hover:border-border-strong",
+                          !selectedDriver && "text-text-tertiary"
+                        )}
+                      >
+                        <span className="truncate">
+                          {selectedDriver ? selectedDriver.name : "اختر سائقاً من القائمة"}
+                        </span>
+                        <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform", driverPickerOpen && "rotate-180")} strokeWidth={2} />
+                      </button>
+                      {driverPickerOpen && (
+                        <div className="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-sm border border-border bg-bg-surface shadow-lg">
+                          {drivers.map((d) => {
+                            const isSelected = d.id === selectedDriverId;
+                            const statusLabel =
+                              d.status === "available" ? "متاح" :
+                              d.status === "on-route"  ? "في رحلة" : "خارج الدوام";
+                            const statusColor =
+                              d.status === "available" ? "bg-status-success" :
+                              d.status === "on-route"  ? "bg-status-warning" : "bg-text-tertiary";
+                            return (
+                              <button
+                                type="button"
+                                key={d.id}
+                                onClick={() => pickDriver(d)}
+                                className={cn(
+                                  "w-full px-3 py-2.5 flex items-start gap-2.5 text-right border-b border-border-subtle last:border-0 transition-colors",
+                                  isSelected ? "bg-brand-primary/10" : "hover:bg-bg-surface-raised"
+                                )}
+                              >
+                                <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", statusColor)} aria-hidden />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium tracking-tight truncate">{d.name}</p>
+                                  <p className="text-[11px] text-text-tertiary tabular truncate">
+                                    {d.vehicleType} · {d.vehicleNumber} · {d.phone}
+                                  </p>
+                                </div>
+                                <span className="text-[10px] text-text-tertiary shrink-0 mt-0.5">{statusLabel}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {selectedDriver && (
+                        <div className="mt-2 rounded-sm border border-border-subtle bg-bg-surface-raised/40 p-3 grid grid-cols-2 gap-2 text-[11px]">
+                          <DriverField label="رقم العربية" value={`${selectedDriver.vehicleType} · ${selectedDriver.vehicleNumber}`} />
+                          <DriverField label="رقم التليفون" value={selectedDriver.phone} />
+                          <DriverField label="الرقم القومي" value={selectedDriver.nationalId} className="col-span-2" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        value={driverName}
+                        onChange={(e) => setDriverName(e.target.value)}
+                        placeholder="اسم السائق"
+                        className="w-full h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight transition-all"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          value={driverVehicleType}
+                          onChange={(e) => setDriverVehicleType(e.target.value)}
+                          placeholder="نوع العربية"
+                          className="h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight transition-all"
+                        />
+                        <input
+                          value={driverVehicleNumber}
+                          onChange={(e) => setDriverVehicleNumber(e.target.value)}
+                          placeholder="رقم العربية"
+                          className="h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight tabular transition-all"
+                        />
+                      </div>
+                      <input
+                        value={driverPhone}
+                        onChange={(e) => setDriverPhone(e.target.value)}
+                        placeholder="رقم التليفون"
+                        inputMode="tel"
+                        className="w-full h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight tabular transition-all"
+                      />
+                      <input
+                        value={driverNationalId}
+                        onChange={(e) => setDriverNationalId(e.target.value)}
+                        placeholder="الرقم القومي (14 رقم)"
+                        inputMode="numeric"
+                        maxLength={14}
+                        className="w-full h-10 px-3 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight tabular transition-all"
+                      />
+                    </div>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-[10px] tracking-[0.16em] uppercase text-text-tertiary mb-1.5">
-                    ملاحظة للفرع {hasDiff && <span className="text-status-warning">*</span>}
+                    ملاحظة للفرع (اختياري)
                   </label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="مثال: جبنة الشيدر نقصت بسبب نفاذ المخزون — سيتم إرسال الباقي غداً"
+                    placeholder="مثال: تأخر الإرسال نصف ساعة بسبب الطقس"
                     rows={3}
                     className="w-full px-3 py-2.5 rounded-sm text-sm bg-bg-surface border border-border focus:border-brand-primary outline-none tracking-tight resize-none transition-all placeholder:text-text-tertiary"
                   />
@@ -236,8 +365,9 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
               <button
                 type="button"
                 onClick={handleDispatch}
-                disabled={hasDiff && !note.trim()}
-                className="flex-[2] h-11 rounded-sm bg-brand-primary text-text-on-brand text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-brand-primary-hover disabled:opacity-40 active:scale-[0.98] transition-all"
+                disabled={!driverReady}
+                title={!driverReady ? "اختر سائقاً أو أدخل بياناته" : ""}
+                className="flex-[2] h-11 rounded-sm bg-brand-primary text-text-on-brand text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-brand-primary-hover disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
               >
                 <Truck className="w-4 h-4" strokeWidth={2} />
                 إرسال الطلب للفرع
@@ -246,7 +376,8 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
           </>
         ) : (
           /* QR phase */
-          <div className="flex-1 flex flex-col items-center justify-center px-8 py-6 text-center space-y-5">
+          <>
+          <div className="flex-1 flex flex-col items-center justify-start px-8 py-6 text-center space-y-5 overflow-y-auto">
             <div className="w-14 h-14 rounded-full bg-status-success/15 text-status-success flex items-center justify-center">
               <Check className="w-7 h-7" strokeWidth={2} />
             </div>
@@ -272,21 +403,119 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
               <ExpiryCountdown issuedAtISO={liveRequest.dispatchedAtISO} />
             </div>
 
-            {request.driverName && (
-              <Card padding="sm" className="w-full text-right">
-                <p className="text-[10px] text-text-tertiary">السائق</p>
-                <p className="text-sm font-medium mt-0.5">{request.driverName}</p>
+            {liveRequest.driverName && (
+              <Card padding="sm" className="w-full text-right space-y-1.5">
+                <p className="text-[10px] tracking-[0.16em] uppercase text-text-tertiary">السائق</p>
+                <p className="text-sm font-bold tracking-tight">{liveRequest.driverName}</p>
+                <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-border-subtle">
+                  {(liveRequest.driverVehicleType || liveRequest.driverVehicleNumber) && (
+                    <DriverField
+                      label="رقم العربية"
+                      value={[liveRequest.driverVehicleType, liveRequest.driverVehicleNumber].filter(Boolean).join(" · ")}
+                    />
+                  )}
+                  {liveRequest.driverPhone && <DriverField label="التليفون" value={liveRequest.driverPhone} />}
+                  {liveRequest.driverNationalId && (
+                    <DriverField label="الرقم القومي" value={liveRequest.driverNationalId} className="col-span-2" />
+                  )}
+                </div>
               </Card>
             )}
 
-            <button type="button" onClick={onClose}
-              className="w-full h-11 rounded-sm bg-brand-primary text-text-on-brand text-sm font-medium hover:bg-brand-primary-hover transition-all">
-              تم ✓
-            </button>
+            {/* Action buttons */}
+            <div className="w-full space-y-2 pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const printArea = document.getElementById("qr-print-area");
+                  if (!printArea) { window.print(); return; }
+                  // Inject print CSS temporarily
+                  const style = document.createElement("style");
+                  style.setAttribute("data-qr-print", "1");
+                  style.textContent = [
+                    "@media print {",
+                    "  body > *:not(#qr-print-area) { display: none !important; }",
+                    "  #qr-print-area {",
+                    "    display: block !important; position: fixed; inset: 0;",
+                    "    background: white; padding: 32px; direction: rtl;",
+                    "    font-family: system-ui, sans-serif;",
+                    "  }",
+                    "}",
+                  ].join("\n");
+                  document.head.appendChild(style);
+                  printArea.classList.remove("hidden");
+                  window.print();
+                  printArea.classList.add("hidden");
+                  document.querySelector("[data-qr-print]")?.remove();
+                }}
+                className="w-full h-11 rounded-sm border border-border-strong bg-bg-surface text-text-primary text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-bg-surface-raised transition-all active:scale-[0.98]"
+              >
+                <Printer className="w-4 h-4" strokeWidth={1.75} />
+                طباعة QR Code للسائق
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full h-11 rounded-sm bg-brand-primary text-text-on-brand text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-brand-primary-hover transition-all active:scale-[0.98]"
+              >
+                <Check className="w-4 h-4" strokeWidth={2.5} />
+                السائق أخذ الكود · تم
+              </button>
+            </div>
           </div>
+
+          {/* Hidden print area — CSS is injected by the print button's onClick */}
+          <div id="qr-print-area" className="hidden">
+            <div style={{ textAlign: "center", padding: "16px" }}>
+              <p style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: "4px" }}>
+                DISPATCH ORDER · QR CODE
+              </p>
+              <h2 style={{ fontSize: "22px", fontWeight: "bold", margin: "0 0 4px" }}>
+                {liveRequest.requestNumber}
+              </h2>
+              <p style={{ fontSize: "13px", color: "#555", marginBottom: "20px" }}>
+                {liveRequest.branchName} · {liveRequest.dispatchedAt}
+              </p>
+
+              {/* QR re-rendered for print */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+                <MockQR value={buildQRPayload(liveRequest)} />
+              </div>
+
+              <p style={{ fontSize: "12px", color: "#444", marginBottom: "4px" }}>
+                الكود الأمني:&nbsp;
+                <strong style={{ fontFamily: "monospace", letterSpacing: "0.1em" }}>
+                  {liveRequest.dispatchToken}
+                </strong>
+              </p>
+
+              {liveRequest.driverName && (
+                <p style={{ fontSize: "12px", color: "#444", marginTop: "8px" }}>
+                  السائق: <strong>{liveRequest.driverName}</strong>
+                  {liveRequest.driverVehicleNumber && ` · ${liveRequest.driverVehicleType ?? ""} ${liveRequest.driverVehicleNumber}`}
+                </p>
+              )}
+
+              <hr style={{ margin: "16px 0", borderColor: "#ddd" }} />
+              <p style={{ fontSize: "11px", color: "#999" }}>
+                الطلب في الطريق · يُمسح هذا الكود عند الاستلام · الصلاحية 24 ساعة
+              </p>
+            </div>
+          </div>
+          </>
         )}
       </aside>
     </>
+  );
+}
+
+/* ── Compact two-line label/value cell used in driver summary ────────────── */
+function DriverField({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <p className="text-[10px] text-text-tertiary tracking-tight">{label}</p>
+      <p className="text-xs font-medium tabular tracking-tight truncate">{value}</p>
+    </div>
   );
 }
 

@@ -182,7 +182,8 @@ export const templates: Template[] = [
 export interface RequestItem {
   catalogId: string;
   name: string;
-  quantity: number;
+  quantity: number;            // original quantity requested by branch
+  adjustedQty?: number;        // optional factory-edited qty (only set when factory edits)
   unit: string;
   pricePerUnit: number;
 }
@@ -198,6 +199,9 @@ export interface RequestRecord {
   createdAt: string; // human Arabic
   approvedBy?: string;
   approvedAt?: string;
+  adjustmentNote?: string;
+  adjustedBy?: string;
+  adjustedAt?: string;
   scheduledDelivery?: string;
   items: RequestItem[];
   totalValue: number;

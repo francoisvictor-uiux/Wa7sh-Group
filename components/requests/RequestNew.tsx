@@ -68,6 +68,7 @@ export function RequestNew() {
       brandId: user?.brandId ?? "wahsh",
       branchId: user?.branchId ?? "",
       branchName: user?.branchId ? (branchMap[user.branchId]?.name ?? user.branchId) : "",
+      createdBy: user?.name ?? "—",
       items,
       priority: priority === "rush" ? "urgent" : "normal",
       note: note || undefined,
