@@ -126,9 +126,6 @@ export function DispatchPanel({ request, onClose }: DispatchPanelProps) {
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
       <aside className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-[480px] bg-bg-canvas border-l border-border-subtle shadow-2xl flex flex-col"
         style={{ animation: "slideInRight 280ms cubic-bezier(0.16,1,0.3,1)" }}>
-        <style jsx global>{`
-          @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        `}</style>
 
         {/* Header */}
         <header className="shrink-0 px-5 py-4 border-b border-border-subtle flex items-center justify-between gap-3">
